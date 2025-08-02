@@ -1,4 +1,5 @@
 import asyncio
+import requests
 from BackEnd.orm_models import Base
 from BackEnd.sqlite_db_connection import engine
 
