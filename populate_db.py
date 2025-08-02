@@ -6,6 +6,7 @@ from BackEnd.orm_models import Base, CookbookEntry, Recipe, Ingredient, RecipeSt
 from BackEnd.sqlite_db_connection import engine
 from BackEnd.gram15_parser import FifteenGramParser
 from BackEnd.sqlite_db_connection import async_session
+from sqlalchemy import func
 
 
 async def create_all_tables() -> None:
@@ -84,10 +85,8 @@ async def recipe_exists(url: str, title: str) -> bool:
     """
     async with async_session() as session:
         result = await session.execute(
-            # CookbookEntry.src_url or CookbookEntry.title
-            # Use ilike for case-insensitive title match
             CookbookEntry.__table__.select().where(
-                (CookbookEntry.src_url == url) | (CookbookEntry.title.ilike(title))
+                (CookbookEntry.src_url == url) | (func.lower(CookbookEntry.title) == title.lower())
             )
         )
         row = result.first()
