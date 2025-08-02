@@ -1,5 +1,6 @@
 import asyncio
 import httpx
+from Utils.custom_logger import logger
 from BackEnd.data_models import RecipeData
 from BackEnd.orm_models import Base, CookbookEntry, Recipe, Ingredient, RecipeStep
 from BackEnd.sqlite_db_connection import engine
@@ -37,36 +38,75 @@ async def parse_recipe(html: str) -> RecipeData:
 async def save_recipe_to_db(recipe: RecipeData) -> None:
     """
     Saves the parsed recipe data to the database.
+    Handles foreign key relationships and errors.
+    """
+    try:
+        async with async_session() as session:
+            async with session.begin():
+                # Create and add CookbookEntry
+                cookbookentry_orm = CookbookEntry(**recipe.cookbook_entry_data.__dict__)
+                session.add(cookbookentry_orm)
+                await session.flush()  # Get cookbookentry_orm.id
+
+                # Create and add Recipe, link to CookbookEntry
+                recipe_orm = Recipe(cookbook_entry_id=cookbookentry_orm.id)
+                session.add(recipe_orm)
+                await session.flush()  # Get recipe_orm.id
+
+                # Add Ingredients
+                for ingredient in recipe.ingredients_data:
+                    ingredient_orm = Ingredient(**ingredient.__dict__, recipe_id=recipe_orm.id)
+                    session.add(ingredient_orm)
+
+                # Add Recipe Steps
+                for step in recipe.instructions_data:
+                    step_orm = RecipeStep(**step.__dict__, recipe_id=recipe_orm.id)
+                    session.add(step_orm)
+
+            # Commit once at the end
+            await session.commit()
+    except Exception as e:
+        logger.error(f"Failed to save recipe: {e}")
+        await session.rollback()
+        raise
+
+
+async def recipe_exists(url: str, title: str) -> bool:
+    """
+    Check if a recipe with the given URL or title already exists in the database.
+
+    Parameters:
+    url (str): The source URL of the recipe to check.
+    title (str): The title of the recipe to check.
+
+    Returns:
+    bool: True if a recipe with the given URL or title exists, False otherwise.
     """
     async with async_session() as session:
-        async with session.begin():
-            cookbookentry_orm = CookbookEntry(**recipe.cookbook_entry_data.__dict__)
-            session.add(cookbookentry_orm)
-            await session.commit()
-
-            recipe_orm = Recipe(cookbook_entry=cookbookentry_orm)
-            session.add(recipe_orm)
-            await session.commit()
-
-            # Save ingredients and instructions
-            for ingredient in recipe.ingredients_data:
-                ingredient_orm = Ingredient(**ingredient.__dict__)
-                session.add(ingredient_orm)
-            await session.commit()
-
-            # Save recipe steps
-            for step in recipe.instructions_data:
-                step_orm = RecipeStep(**step.__dict__)
-                session.add(step_orm)
-            await session.commit()
+        result = await session.execute(
+            # CookbookEntry.src_url or CookbookEntry.title
+            # Use ilike for case-insensitive title match
+            CookbookEntry.__table__.select().where(
+                (CookbookEntry.src_url == url) | (CookbookEntry.title.ilike(title))
+            )
+        )
+        row = result.first()
+        return row is not None
 
 
 async def main():
     # Example URL (replace with actual recipe URL)
-    url = "https://15gram.be/artikelen/10-gerechten-die-het-waard-zijn-om-de-barbecue-aan-te-steken"
+    url = "https://15gram.be/recepten/mignonette-met-dragon-champignonsaus-venkel-en-zoete-aardappelfrietjes"
 
     # Create all tables in the database if they do not exist
     await create_all_tables()
+
+    # Check if recipe already exists
+    title = "Mignonette met dragon, champignonsaus, venkel en zoete aardappelfrietjes"
+    exists = await recipe_exists(url, title)
+    if exists:
+        print("Recipe already exists in the database.")
+        return
 
     # Fetch HTML content
     html_content = await get_html_content(url)
