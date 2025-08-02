@@ -6,7 +6,7 @@ Uses BeautifulSoup for HTML parsing and regular expressions for ingredient extra
 Classes:
     Ingredient: Represents a single ingredient with optional amount, unit, and name.
     CookbookEntry: Metadata for a recipe (title, description, servings, prep time).
-    Instructions: Represents a single instruction step.
+    RecipeStep: Represents a single instruction step.
     Recipe: Aggregates cookbook entry, ingredients, and instructions.
     FifteenGramParser: Main parser class for extracting recipe data from HTML.
 
@@ -17,8 +17,8 @@ Example:
 
 from typing import List, Optional
 from bs4 import BeautifulSoup
-from back_end.custom_logger import logger
-from back_end.data_models import (
+from Utils.custom_logger import logger
+from BackEnd.data_models import (
     Ingredient,
     CookbookEntry,
     RecipeStep,
@@ -30,14 +30,14 @@ import re
 class FifteenGramParser:
     """Parser for extracting recipe data from 15gram.be HTML pages."""
 
-    def parse(self, html: str) -> Recipe:
-        """Parses the entire HTML page and returns a Recipe object.
+    def parse(self, html: str) -> Optional[Recipe]:
+        """Parses the entire HTML page and returns a Recipe object or None if not a valid recipe.
 
         Args:
             html (str): The HTML content of the recipe page.
 
         Returns:
-            Recipe: Parsed recipe data including metadata, ingredients, and instructions.
+            Optional[Recipe]: Parsed recipe data including metadata, ingredients, and instructions, or None if not a valid recipe page.
         """
         logger.debug("Starting HTML parsing for recipe.")
         soup = BeautifulSoup(html, "html.parser")
@@ -49,8 +49,32 @@ class FifteenGramParser:
             ingredients=ingredients,
             instructions=instructions,
         )
+        if not self._is_valid_recipe(recipe):
+            logger.info("HTML does not represent a valid recipe page. Returning None.")
+            return None
         logger.debug("Finished HTML parsing for recipe.")
         return recipe
+
+    def _is_valid_recipe(self, recipe: Recipe) -> bool:
+        """Checks if the parsed Recipe object contains the minimal required fields to be considered valid.
+
+        Args:
+            recipe (Recipe): The parsed Recipe object.
+
+        Returns:
+            bool: True if the recipe is valid, False otherwise.
+        """
+        entry = recipe.cookbook_entry
+        if not entry or not entry.title or not entry.title.strip():
+            logger.debug("Recipe invalid: missing or empty title.")
+            return False
+        if not recipe.ingredients or len(recipe.ingredients) == 0:
+            logger.debug("Recipe invalid: no ingredients found.")
+            return False
+        if not recipe.instructions or len(recipe.instructions) == 0:
+            logger.debug("Recipe invalid: no instructions found.")
+            return False
+        return True
 
     def _parse_entry(self, soup: BeautifulSoup) -> CookbookEntry:
         """Extracts recipe metadata from the HTML soup.
@@ -79,9 +103,7 @@ class FifteenGramParser:
 
         servings = ""
         prep_time = ""
-        yield_tag = soup.select_one(".yield-container .yield") or soup.find(
-            "span", class_="yield"
-        )
+        yield_tag = soup.select_one(".yield-container .yield") or soup.find("span", class_="yield")
         servings = yield_tag.get_text(strip=True) if yield_tag else ""
         logger.debug(f"Extracted servings: {servings}")
 
@@ -130,9 +152,7 @@ class FifteenGramParser:
                     txt = li.get_text(strip=True)
                     if txt:
                         ingredients.append(self._parse_ingredient_line(txt))
-        logger.debug(
-            f"Finished ingredient parsing. Found {len(ingredients)} ingredients."
-        )
+        logger.debug(f"Finished ingredient parsing. Found {len(ingredients)} ingredients.")
         return ingredients
 
     def _parse_ingredient_line(self, line: str) -> Ingredient:
@@ -187,26 +207,20 @@ class FifteenGramParser:
             amount = match.group(1)
             unit = self._normalize_unit(match.group(2))
             name = match.group(3).strip() if match.group(3) else None
-            logger.debug(
-                f"Regex matched: amount='{amount}', unit='{unit}', name='{name}'"
-            )
+            logger.debug(f"Regex matched: amount='{amount}', unit='{unit}', name='{name}'")
             if amount in fraction_map:
                 logger.debug(f"Converting fraction '{amount}' to decimal.")
                 amount = fraction_map[amount]
             if unit is None and amount is not None and name:
                 parts = name.split(None, 1)
                 if len(parts) > 1 and self._normalize_unit(parts[0]) is not None:
-                    logger.debug(
-                        f"Attempting to infer unit from name part: '{parts[0]}'"
-                    )
+                    logger.debug(f"Attempting to infer unit from name part: '{parts[0]}'")
                     unit = self._normalize_unit(parts[0])
                     name = parts[1]
         else:
             name = line
             logger.debug(f"No regex match, setting full line as name: '{name}'")
-        parsed_ingredient = Ingredient(
-            raw_text=line, amount=amount, unit=unit, name=name
-        )
+        parsed_ingredient = Ingredient(raw_text=line, amount=amount, unit=unit, name=name)
         logger.debug(f"Parsed ingredient: {parsed_ingredient}")
         return parsed_ingredient
 
@@ -252,7 +266,7 @@ class FifteenGramParser:
             soup (BeautifulSoup): Parsed HTML soup.
 
         Returns:
-            List[Instructions]: List of instruction steps.
+            List[RecipeStep]: List of instruction steps.
         """
         logger.debug("Starting instruction parsing.")
         instructions = []
@@ -264,22 +278,5 @@ class FifteenGramParser:
                 for idx, li in enumerate(ol.find_all("li"), 1):
                     step = li.get_text(strip=True)
                     instructions.append(RecipeStep(step_number=idx, instruction=step))
-        logger.debug(
-            f"Finished instruction parsing. Found {len(instructions)} instructions."
-        )
+        logger.debug(f"Finished instruction parsing. Found {len(instructions)} instructions.")
         return instructions
-
-
-if __name__ == "__main__":
-    import requests
-    import pprint
-
-    # Example usage: fetch and parse a recipe from 15gram.be
-    url = "https://15gram.be/recepten/gekruide-kip-met-aardappelblokjes-selder-radijs-en-appelsalade"
-    response = requests.get(url)
-    html = response.text
-
-    parser = FifteenGramParser()
-    recipe = parser.parse(html)
-
-    pprint.pprint(recipe)
