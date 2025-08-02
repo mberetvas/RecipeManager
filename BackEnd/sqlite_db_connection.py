@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import sessionmaker
 
 engine = create_async_engine(
-    "sqlite+aiosqlite:///.Database/RecipeManager.db",
+    "sqlite+aiosqlite:///Database/RecipeManager.db",
     echo=True,  # Optional: for SQL logging
     future=True,
 )
