@@ -37,6 +37,9 @@ class CookbookEntry(Base):
 
     recipe = relationship("Recipe", back_populates="cookbook_entry", uselist=False)
 
+    def __repr__(self):
+        return f"<CookbookEntry(title={self.title}, cuisine_origin={self.cuisine_origin})>"
+
 
 class Recipe(Base):
     """
@@ -53,6 +56,12 @@ class Recipe(Base):
     cookbook_entry = relationship("CookbookEntry", back_populates="recipe")
     ingredients = relationship("Ingredient", back_populates="recipe", cascade="all, delete-orphan")
     instructions = relationship("RecipeStep", back_populates="recipe", cascade="all, delete-orphan")
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the Recipe instance.
+        """
+        return f"<Recipe(id={self.id}, cookbook_entry_id={self.cookbook_entry_id})>"
 
 
 class Ingredient(Base):
@@ -71,6 +80,14 @@ class Ingredient(Base):
 
     recipe = relationship("Recipe", back_populates="ingredients")
 
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the Ingredient instance.
+        """
+        return (
+            f"<Ingredient(id={self.id}, name={self.name}, amount={self.amount}, unit={self.unit})>"
+        )
+
 
 class RecipeStep(Base):
     """
@@ -87,6 +104,12 @@ class RecipeStep(Base):
 
     recipe = relationship("Recipe", back_populates="instructions")
 
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the RecipeStep instance.
+        """
+        return f"<RecipeStep(id={self.id}, recipe_id={self.recipe_id}, step_number={self.step_number})>"
+
 
 class IngredientPrice(Base):
     """
@@ -102,8 +125,11 @@ class IngredientPrice(Base):
     store: Optional[str] = Column(String(100), nullable=True)
     date: Optional[str] = Column(String(50), nullable=True)  # ISO date string or similar
 
-    # Relationship to Ingredient (not FK, but via name)
-    # This is a helper for querying prices by ingredient name
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the IngredientPrice instance.
+        """
+        return f"<IngredientPrice(id={self.id}, ingredient_name={self.ingredient_name}, unit={self.unit}, price_per_unit={self.price_per_unit})>"
 
 
 class WeekPlanning(Base):
@@ -124,6 +150,12 @@ class WeekPlanning(Base):
         cascade="all, delete-orphan",
     )
 
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the WeekPlanning instance.
+        """
+        return f"<WeekPlanning(id={self.id}, name={self.name}, days={self.days})>"
+
 
 class WeekPlanningRecipe(Base):
     """
@@ -140,3 +172,9 @@ class WeekPlanningRecipe(Base):
 
     weekplanning = relationship("WeekPlanning", back_populates="recipes")
     recipe = relationship("Recipe")
+
+    def __repr__(self) -> str:
+        """
+        Return a string representation of the WeekPlanningRecipe instance.
+        """
+        return f"<WeekPlanningRecipe(id={self.id}, weekplanning_id={self.weekplanning_id}, recipe_id={self.recipe_id}, day={self.day})>"
