@@ -1,0 +1,49 @@
+{
+  "chat.modeFilesLocations": {
+    "chatmodes": true
+  },
+  "chat.promptFilesLocations": {
+    "prompts": true
+  },
+  "chat.instructionsFilesLocations": {
+    "instructions": true
+  },
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false,
+    "editor.formatOnSave": true
+  },
+  "editor.rulers": [
+    100
+  ],
+  "files.associations": {
+    "*.chatmode.md": "markdown",
+    "*.instructions.md": "markdown",
+    "*.prompt.md": "markdown"
+  },
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": ".github/instructions/copilot-commit-message-instructions.md"
+    }
+  ],
+  "chat.promptFiles": true,
+  "github.copilot.chat.promptFilesLocations": {
+    ".github/prompts": true
+  },
+  "github.copilot.chat.reviewSelection.enabled": true,
+  "github.copilot.chat.reviewSelection.instructions": [
+    {
+      "file": ".github/instructions/reviewSelection.instructions.md"
+    }
+  ],
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "ruff.configuration": "Ruff-config/ruff.toml",
+  "ruff.configurationPreference": "filesystemFirst",
+  "python.testing.pytestEnabled": true
+}
