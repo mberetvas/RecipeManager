@@ -3,7 +3,7 @@ from typing import List, Optional
 
 
 @dataclass
-class Ingredient:
+class IngredientData:
     """Represents a single ingredient parsed from a recipe.
 
     Attributes:
@@ -20,7 +20,7 @@ class Ingredient:
 
 
 @dataclass
-class CookbookEntry:
+class CookbookEntryData:
     """Metadata for a recipe, including title, description, servings, and prep time.
 
     Attributes:
@@ -43,7 +43,7 @@ class CookbookEntry:
 
 
 @dataclass
-class RecipeStep:
+class RecipeStepData:
     """Represents a single step in the recipe instructions.
 
     Attributes:
@@ -56,7 +56,7 @@ class RecipeStep:
 
 
 @dataclass
-class Recipe:
+class RecipeData:
     """Aggregates all parsed data for a recipe.
 
     Attributes:
@@ -65,6 +65,6 @@ class Recipe:
         instructions (List[Instructions]): List of instruction steps.
     """
 
-    cookbook_entry: CookbookEntry
-    ingredients: List[Ingredient]
-    instructions: List[RecipeStep]
+    cookbook_entry_data: CookbookEntryData
+    ingredients_data: List[IngredientData]
+    instructions_data: List[RecipeStepData]

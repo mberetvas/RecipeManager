@@ -1,9 +1,10 @@
 import asyncio
 import httpx
-from BackEnd.data_models import Recipe
-from BackEnd.orm_models import Base
+from BackEnd.data_models import RecipeData
+from BackEnd.orm_models import Base, CookbookEntry, Recipe, Ingredient, RecipeStep
 from BackEnd.sqlite_db_connection import engine
 from BackEnd.gram15_parser import FifteenGramParser
+from BackEnd.sqlite_db_connection import async_session
 
 
 async def create_all_tables() -> None:
@@ -25,12 +26,39 @@ async def get_html_content(url: str) -> str:
         return response.text
 
 
-async def parse_recipe(html: str) -> Recipe:
+async def parse_recipe(html: str) -> RecipeData:
     """
     Parses a recipe from the provided HTML content.
     """
     parser = FifteenGramParser()
     return parser.parse(html)
+
+
+async def save_recipe_to_db(recipe: RecipeData) -> None:
+    """
+    Saves the parsed recipe data to the database.
+    """
+    async with async_session() as session:
+        async with session.begin():
+            cookbookentry_orm = CookbookEntry(**recipe.cookbook_entry_data.__dict__)
+            session.add(cookbookentry_orm)
+            await session.commit()
+
+            recipe_orm = Recipe(cookbook_entry=cookbookentry_orm)
+            session.add(recipe_orm)
+            await session.commit()
+
+            # Save ingredients and instructions
+            for ingredient in recipe.ingredients_data:
+                ingredient_orm = Ingredient(**ingredient.__dict__)
+                session.add(ingredient_orm)
+            await session.commit()
+
+            # Save recipe steps
+            for step in recipe.instructions_data:
+                step_orm = RecipeStep(**step.__dict__)
+                session.add(step_orm)
+            await session.commit()
 
 
 async def main():
@@ -49,11 +77,14 @@ async def main():
     if recipe is None:
         print("No valid recipe found in the provided HTML content.")
         return
-    print(f"Recipe Title: {recipe.cookbook_entry.title}")
-    print(f"Description: {recipe.cookbook_entry.description}")
-    print(f"Servings: {recipe.cookbook_entry.servings}")
-    print(f"Ingredients: {[ingredient.name for ingredient in recipe.ingredients]}")
-    print(f"Instructions: {recipe.instructions}")
+
+    # Save the recipe to the database
+    await save_recipe_to_db(recipe)
+
+    print("Recipe saved to the database successfully.")
+    from pprint import pprint
+
+    pprint(recipe)
 
 
 if __name__ == "__main__":
