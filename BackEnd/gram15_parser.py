@@ -30,7 +30,7 @@ import re
 class FifteenGramParser:
     """Parser for extracting recipe data from 15gram.be HTML pages."""
 
-    def parse(self, html: str) -> Optional[RecipeData]:
+    def parse(self, html: str, url: str) -> Optional[RecipeData]:
         """Parses the entire HTML page and returns a Recipe object or None if not a valid recipe.
 
         Args:
@@ -41,7 +41,7 @@ class FifteenGramParser:
         """
         logger.debug("Starting HTML parsing for recipe.")
         soup = BeautifulSoup(html, "html.parser")
-        cookbook_entry = self._parse_entry(soup)
+        cookbook_entry = self._parse_entry(soup, url)
         ingredients = self._parse_ingredients(html)
         instructions = self._parse_instructions(soup)
         recipe = RecipeData(
@@ -76,7 +76,7 @@ class FifteenGramParser:
             return False
         return True
 
-    def _parse_entry(self, soup: BeautifulSoup) -> CookbookEntryData:
+    def _parse_entry(self, soup: BeautifulSoup, url: str) -> CookbookEntryData:
         """Extracts recipe metadata from the HTML soup.
 
         Args:
@@ -114,7 +114,11 @@ class FifteenGramParser:
         logger.debug(f"Extracted prep time: {prep_time}")
 
         return CookbookEntryData(
-            title=title, description=description, servings=servings, prep_time=prep_time
+            title=title,
+            description=description,
+            servings=servings,
+            prep_time=prep_time,
+            src_url=url,
         )
 
     def _parse_ingredients(self, html: str) -> List[IngredientData]:

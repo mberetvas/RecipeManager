@@ -28,12 +28,12 @@ async def get_html_content(url: str) -> str:
         return response.text
 
 
-async def parse_recipe(html: str) -> RecipeData:
+async def parse_recipe(html: str, url: str) -> RecipeData:
     """
     Parses a recipe from the provided HTML content.
     """
     parser = FifteenGramParser()
-    return parser.parse(html)
+    return parser.parse(html, url)
 
 
 async def save_recipe_to_db(recipe: RecipeData) -> None:
@@ -111,7 +111,7 @@ async def main():
     html_content = await get_html_content(url)
 
     # Parse the recipe
-    recipe = await parse_recipe(html_content)
+    recipe = await parse_recipe(html_content, url)
 
     if recipe is None:
         print("No valid recipe found in the provided HTML content.")
