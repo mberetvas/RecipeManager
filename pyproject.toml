@@ -11,6 +11,7 @@ dependencies = [
     "httpx>=0.28.1",
     "requests>=2.32.4",
     "sqlalchemy>=2.0.42",
+    "fastapi>=0.116.1"
 ]
 
 [dependency-groups]
