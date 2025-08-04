@@ -1,11 +1,11 @@
 import asyncio
 import httpx
 from Utils.custom_logger import logger
-from BackEnd.data_models import RecipeData
-from BackEnd.orm_models import Base, CookbookEntry, Recipe, Ingredient, RecipeStep
-from BackEnd.sqlite_db_connection import engine
-from BackEnd.gram15_parser import FifteenGramParser
-from BackEnd.sqlite_db_connection import async_session
+from BackEndLogic.data_models import RecipeData
+from BackEndLogic.orm_models import Base, CookbookEntry, Recipe, Ingredient, RecipeStep
+from BackEndLogic.sqlite_db_connection import engine
+from BackEndLogic.gram15_parser import FifteenGramParser
+from BackEndLogic.sqlite_db_connection import async_session
 from sqlalchemy import func
 
 

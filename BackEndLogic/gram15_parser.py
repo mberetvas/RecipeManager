@@ -18,7 +18,7 @@ Example:
 from typing import List, Optional
 from bs4 import BeautifulSoup
 from Utils.custom_logger import logger
-from BackEnd.data_models import (
+from BackEndLogic.data_models import (
     IngredientData,
     CookbookEntryData,
     RecipeStepData,
